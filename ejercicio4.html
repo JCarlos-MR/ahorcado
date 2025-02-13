@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego del Ahorcado</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 0;
+            background-color: #f4f4f4;
+            margin: 0;
+        }
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 1em;
+            text-align: center;
+        }  
+        .container {
+            padding: 20px;
+        }
+        .back-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .back-button:hover {
+            background-color: #0056b3;
+        }      
+        h1 {
+            color: #333;
+        }
+        #word-display {
+            font-size: 2em;
+            letter-spacing: 0.5em;
+            margin: 20px 0;
+        }
+        #attempts {
+            font-size: 1.2em;
+            color: #555;
+        }
+        #message {
+            font-size: 1.5em;
+            margin: 20px 0;
+            color: #d9534f;
+        }
+        input[type="text"] {
+            padding: 10px;
+            font-size: 1em;
+            width: 50px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Juego del Ahorcado</h1>
+    <div id="word-display"></div>
+    <div id="attempts">Intentos restantes: <span id="attempts-left">6</span></div>
+    <div id="message"></div>
+    <input type="text" id="guess-input" maxlength="1" placeholder="Letra">
+    <button onclick="makeGuess()">Adivinar</button>
+    <button onclick="resetGame()">Reiniciar</button>
+
+    <script>
+        let word = '';
+        let guessedLetters = [];
+        let attemptsLeft = 6;
+        const maxAttempts = 6;
+
+        function fetchWord() {
+            fetch('https://random-word-api.herokuapp.com/word?number=1')
+                .then(response => response.json())
+                .then(data => {
+                    word = data[0].toUpperCase();
+                    guessedLetters = Array(word.length).fill('_');
+                    updateDisplay();
+                })
+                .catch(error => console.error('Error fetching word:', error));
+        }
+
+        function updateDisplay() {
+            document.getElementById('word-display').textContent = guessedLetters.join(' ');
+            document.getElementById('attempts-left').textContent = attemptsLeft;
+        }
+
+        function makeGuess() {
+            const guess = document.getElementById('guess-input').value.toUpperCase();
+            document.getElementById('guess-input').value = '';
+
+            if (guessedLetters.includes(guess) || !guess) {
+                return;
+            }
+
+            if (word.includes(guess)) {
+                for (let i = 0; i < word.length; i++) {
+                    if (word[i] === guess) {
+                        guessedLetters[i] = guess;
+                    }
+                }
+            } else {
+                attemptsLeft--;
+            }
+
+            updateDisplay();
+            checkGameStatus();
+        }
+
+        function checkGameStatus() {
+            if (!guessedLetters.includes('_')) {
+                document.getElementById('message').textContent = '¡Felicidades! Has ganado.';
+                disableInput();
+            } else if (attemptsLeft === 0) {
+                document.getElementById('message').textContent = `¡Perdiste! La palabra era "${word}".`;
+                disableInput();
+            }
+        }
+
+        function disableInput() {
+            document.getElementById('guess-input').disabled = true;
+            document.querySelector('button').disabled = true;
+        }
+
+        function resetGame() {
+            attemptsLeft = maxAttempts;
+            guessedLetters = [];
+            document.getElementById('message').textContent = '';
+            document.getElementById('guess-input').disabled = false;
+            document.querySelector('button').disabled = false;
+            fetchWord();
+        }
+
+        // Iniciar el juego al cargar la página
+        window.onload = resetGame;
+    </script>
+</body>
+</html>
